@@ -11,3 +11,13 @@ if __name__ == "__main__":
     test_sample = np.random.rand(1, 30)  # 形状必须匹配模型输入
     result = predict_fraud(test_sample)
     print("Fraud Prediction:", result)
+
+
+from src.data_preprocessing import load_data, preprocess_data
+from src.train_model import train
+from src.evaluate_model import evaluate
+
+df = load_data()
+X_train, X_test, y_train, y_test, scaler = preprocess_data(df)
+model = train(X_train, y_train)
+evaluate(model, X_test, y_test)
