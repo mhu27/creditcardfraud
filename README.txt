@@ -1,116 +1,66 @@
-Credit Card Fraud Detection — MLE Core Project
+#  Credit Card Fraud Detection (MLE Core Project)
 
-A complete machine learning engineering workflow for detecting fraudulent credit card transactions.
-The project focuses on handling extreme class imbalance, comparing multiple models, and building production-ready ML components (pipelines, models, inference scripts).
+## Project Overview
 
-Project Structure
+This project builds a machine learning model to detect fraudulent credit card transactions. Since fraud cases are extremely rare compared to legitimate ones, the primary challenge lies in handling class imbalance and optimizing the decision threshold to maximize fraud detection performance.
+
+The goal is to create a reproducible, scalable, and well-documented workflow as part of a transition into Machine Learning Engineering (MLE).
+
+---
+
+##  Project Structure
 fraud-detection/
-├── data/                 # Raw dataset (creditcard.csv)
-├── notebook/             # EDA, model training, evaluation
-│   ├── eda.ipynb
-│   ├── main.ipynb                      # Baseline logistic regression
-│   ├── model_logistic_regularized.ipynb
-│   ├── model_xgboost.ipynb
-│   └── model_compare.ipynb
-├── models/               # Saved models (.pkl)
-│   ├── logistic_baseline.pkl
-│   ├── logreg_l1.pkl
-│   ├── logreg_l2.pkl
-│   └── xgb_model.pkl
-├── results/              # Metrics comparison, ROC/PR curves, result CSVs
-├── src/                  # Deployable code (predict.py, utils)
-└── README.md
+├── data/ # Raw dataset (.csv)
+├── notebook/ # Exploratory analysis, training and evaluation (Jupyter notebooks)
+├── model/ # Saved model pipeline (.pkl)
+├── src/ # Custom prediction logic (predict.py)
+├── README.md # Project documentation
 
-Project Goal
+## 🛠 Model Summary
 
-Credit card fraud detection is a highly imbalanced binary classification task
-(fraud cases < 0.2% of all transactions).
+- **Model**: Logistic Regression with `class_weight='balanced'`
+- **Preprocessing**: StandardScaler for feature normalization
+- **Tooling**: `Pipeline` to unify preprocessing and model
+- **Train/Test split**: Stratified sampling based on label (`Class`)
+- **Custom Threshold**: `y_score >= 0.9999999999` selected to balance precision and recall
 
-This project aims to:
+---
 
-Build robust machine learning models for rare-event detection
+##  Evaluation Metrics (after threshold tuning)
 
-Evaluate linear vs. tree-based models
+| Metric     | Class 0 (Non-Fraud) | Class 1 (Fraud) |
+|------------|---------------------|------------------|
+| Precision  | 1.00                | 0.85             |
+| Recall     | 1.00                | 0.76             |
+| F1-score   | 1.00                | 0.80             |
+| ROC AUC    | \> 0.97             | (Excellent separation ability) |
 
-Handle class imbalance (class weights, scale_pos_weight)
+> With the new threshold, the model catches ~76% of fraud cases with high precision (85%), while maintaining nearly perfect performance on non-fraud cases.
 
-Produce clean, reproducible, MLE-style artifacts
+---
 
-Prepare for deployment (FastAPI, Docker)
+##  Key Takeaways
 
-Models Implemented
-1. Logistic Regression (Baseline Pipeline)
+- AUC and ROC analysis helped diagnose true model potential despite class imbalance.
+- Custom thresholding allowed a major improvement in fraud class precision (from 0.06 → 0.85).
+- Built using reproducible components (Pipeline, joblib, sklearn APIs), ready for production wrapping.
 
-Notebook: main.ipynb
+---
 
-Pipeline(StandardScaler → LogisticRegression)
+##  Next Steps
 
-Uses class_weight='balanced'
+- [ ] Compare against Random Forest or XGBoost baselines
+- [ ] Visualize Precision-Recall curve to support threshold selection
+- [ ] Save PR / ROC plots for presentation
+- [ ] Build and expose a minimal FastAPI service for inference
+- [ ] Dockerize and test locally
 
-Serves as a simple interpretable baseline
+---
 
-Baseline Performance
+##  Model Inference (Quick Usage)
 
-(Using default decision threshold 0.5)
-
-Metric	Fraud Class (1)
-Precision	~0.06
-Recall	~0.03
-F1	~0.04
-ROC AUC	~0.97
-
-➡ Although AUC looks high, precision/recall are extremely poor due to class imbalance.
-
-2. Regularized Logistic Regression (L1 & L2)
-
-Notebook: model_logistic_regularized.ipynb
-
-Explicit regularization significantly improves performance:
-
-
-
-3. XGBoost (Tree-based Gradient Boosting)
-
-Notebook: model_xgboost.ipynb
-
-Why XGBoost?
-
-Handles non-linear fraud patterns
-
-Works extremely well on imbalanced datasets
-
-Built-in parameter: scale_pos_weight = (#neg / #pos)
-
-Best performance across all metrics
-
-Saved model: models/xgb_model.pkl
-
-📈 Overall Model Comparison
-
-Generated in: model_compare.ipynb
-
-Model	AUC	PR-AUC	Recall	Precision	F1
-Logistic-Baseline	0.97	0.08	0.03	0.06	0.04
-Logistic-L2	…	…	…	…	…
-Logistic-L1	…	…	…	…	…
-XGBoost	…	…	…	…	…
-
-(CSV saved as results/model_results_all.csv)
-
-Key Insight:
-👉 PR-AUC and recall matter more than ROC-AUC in fraud detection.
-
-📝 What We Learned
-✓ ROC-AUC alone is misleading for imbalanced problems
-
-A model can achieve 0.97 AUC and still miss 97% of fraud cases.
-
-✓ Regularization (L1/L2) improves logistic models
-
-Stronger signal extraction → better fraud recall.
-
-✓ XGBoost is the strongest performer
-
-Captures complex fraud patterns
-Handles imbalance effectively
-Best PR-AUC & recall combination
+```python
+import joblib
+model = joblib.load('model/fraud_model.pkl')
+y_proba = model.predict_proba(X_new)[:, 1]
+y_pred = (y_proba >= 0.99).astype(int)
